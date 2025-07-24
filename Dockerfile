@@ -20,13 +20,15 @@ WORKDIR /home/radon
 RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
     echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/radon/.bashrc && \
-    # Install starship
-    curl -sS https://starship.rs/install.sh | sh -s -- -y && \
-    echo 'eval "$(starship init bash)"' >> /home/radon/.bashrc && \
-    mkdir -p /home/radon/.config && \
-    starship preset catppuccin-powerline -o /home/radon/.config/starship.toml && \
+    # Install oh-my-push
+    brew install jandedobbeleer/oh-my-posh/oh-my-posh && \
+    mkdir -p /home/radon/.config/oh-my-posh-themes && \
+    git clone https://github.com/jandedobbeleer/oh-my-posh && \
+    mv oh-my-posh/themes/* /home/radon/.config/oh-my-posh-themes && \
+    echo "eval \"$(oh-my-posh init bash --config ~/.config/oh-my-posh-themes/atuomatic.omp.json)\"" >> /home/radon/.bashrc && \
+    rm -rf oh-my-posh && \
     # Install neovim, plugins, and tools
-    brew install neovim wget unzip && \
+    brew install neovim vim wget unzip && \
     git clone https://github.com/LazyVim/starter /home/radon/.config/nvim
 
 # Set the default command to bash
