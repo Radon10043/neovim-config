@@ -1,35 +1,37 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-c"]
 
-# Install dependencies as root
+WORKDIR /home
+
+# Use Tsinghua University mirror for faster package downloads if necessary
+# RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse" > /etc/apt/sources.list && \
+#     echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+#     echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse" >> /etc/apt/sources.list && \
+#     echo "deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list
+
+# Install dependencie
 RUN apt update && \
-    apt install -y curl git build-essential gcc g++ procps file sudo && \
+    apt install -y curl wget git build-essential gcc g++ procps file sudo vim unzip && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user 'radon' and grant sudo privileges
-RUN useradd --create-home --shell /bin/bash radon && \
-    echo "radon ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/radon
+# Install neovim, lazy-vim
+ENV PATH="${PATH}:/opt/nvim-linux-x86_64/bin"
+RUN curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz && \
+    rm -rf /opt/nvim && \
+    tar -C /opt -xzf nvim-linux-x86_64.tar.gz && \
+    git clone https://github.com/LazyVim/starter /root/.config/nvim
 
-# Switch to the non-root user
-USER radon
-WORKDIR /home/radon
-
-# Install Homebrew, tools, and configs as the non-root user in a single layer
-# This ensures 'brew' is in the PATH for all subsequent commands in this layer.
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
-    echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/radon/.bashrc && \
-    # Install oh-my-push
-    brew install jandedobbeleer/oh-my-posh/oh-my-posh && \
-    mkdir -p /home/radon/.config/oh-my-posh-themes && \
+# Install oh-my-push
+ENV PATH="/root/.local/bin:${PATH}"
+RUN curl -s https://ohmyposh.dev/install.sh | bash -s && \
+    mkdir -p /root/.config/oh-my-posh-themes && \
     git clone https://github.com/jandedobbeleer/oh-my-posh && \
-    mv oh-my-posh/themes/* /home/radon/.config/oh-my-posh-themes && \
-    echo "eval \"$(oh-my-posh init bash --config ~/.config/oh-my-posh-themes/atuomatic.omp.json)\"" >> /home/radon/.bashrc && \
-    rm -rf oh-my-posh && \
-    # Install neovim, plugins, and tools
-    brew install neovim vim wget unzip && \
-    git clone https://github.com/LazyVim/starter /home/radon/.config/nvim
+    mv oh-my-posh/themes/* /root/.config/oh-my-posh-themes && \
+    echo >> /root/.bashrc && \
+    echo 'eval "$(oh-my-posh init bash --config /root/.config/oh-my-posh-themes/atomic.omp.json)"' >> /root/.bashrc && \
+    rm -rf oh-my-posh
 
 # Set the default command to bash
 CMD ["/bin/bash"]
